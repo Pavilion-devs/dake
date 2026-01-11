@@ -41,25 +41,6 @@ This program implements a simple number-guessing raffle (1-100) where:
 - `allow`: Grant decryption permission to specific address
 - `is_validsignature`: Verify decryption proof on-chain
 
-## Project Structure
-
-```
-programs/private-lottery/src/
-├── lib.rs                      # Program entrypoint
-├── constants.rs                # Program constants
-├── error.rs                    # Error definitions
-├── state/
-│   └── mod.rs                  # Lottery and Ticket account structures
-└── instructions/
-    ├── mod.rs                  # Module exports
-    ├── create_lottery.rs       # Initialize raffle
-    ├── buy_ticket.rs           # Purchase ticket with encrypted guess
-    ├── draw_winner.rs          # Set encrypted winning number
-    ├── check_winner.rs         # Encrypted comparison
-    ├── claim_prize.rs          # Compute encrypted prize via e_select
-    └── withdraw_prize.rs       # Verify and withdraw prize
-```
-
 ## Account Structures
 
 ### Lottery
