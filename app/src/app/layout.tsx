@@ -1,21 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
-import { Wallet } from "@/components/wallet-provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Raffle",
-  description: "Raffle - powered by Inco",
+  title: "Dake - Confidential Prediction Markets",
+  description: "The first confidential prediction market on Solana. Your bets are encrypted — nobody knows your position until you win.",
 };
 
 export default function RootLayout({
@@ -24,11 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[#0a0a0b] text-white font-sans`}
+        className={`${inter.variable} ${dmSans.variable} bg-[#0f0f11] text-slate-300 text-lg antialiased selection:bg-yellow-400 selection:text-black relative overflow-x-hidden`}
       >
-        <Wallet>{children}</Wallet>
+        {children}
       </body>
     </html>
   );

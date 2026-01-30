@@ -89,6 +89,10 @@ cd raffle-example-solana
 # Install dependencies
 yarn install
 
+# Copy env template and add your Helius API key (get one at https://dev.helius.xyz/)
+cp .env.example .env
+# Edit .env and set HELIUS_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+
 # Build program
 anchor build
 ```
@@ -104,14 +108,16 @@ solana address -k target/deploy/keypair.json
 # Rebuild with correct program ID
 anchor build
 
-# Deploy to devnet
-anchor deploy --provider.cluster devnet
+# Deploy to devnet (uses HELIUS_RPC_URL or ANCHOR_PROVIDER_URL from .env)
+source .env 2>/dev/null || true
+yarn run deploy:devnet
+# Or: anchor deploy --provider.cluster $HELIUS_RPC_URL
 ```
 
 ## Testing
 
 ```bash
-# Run tests (after deployment)
+# Run tests (loads .env automatically; uses HELIUS_RPC_URL for RPC)
 anchor test --skip-deploy
 ```
 

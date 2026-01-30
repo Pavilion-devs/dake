@@ -3,7 +3,7 @@ import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
 
 // Program ID from the deployed contract
 export const PROGRAM_ID = new PublicKey(
-  "HY5CHkW7FEvCMdZLKrQ4w2Vr6krGtnJ1Kttd2WPqW9WC"
+  "5apEYrFFuxT7yExEFz56kfmuYvc1YxcActFCMWnYpQea"
 );
 
 // Inco Lightning Program ID
@@ -14,7 +14,7 @@ export const INCO_LIGHTNING_PROGRAM_ID = new PublicKey(
 // IDL import
 import idl from "./idl.json";
 
-export type PrivateRaffleIDL = typeof idl;
+export type DakeIDL = typeof idl;
 
 export function getProgram(
   connection: Connection,
@@ -28,27 +28,41 @@ export function getProgram(
 }
 
 // PDA derivation functions
-export function getRafflePDA(raffleId: BN): [PublicKey, number] {
+export function getMarketPDA(marketId: BN): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("raffle"), raffleId.toArrayLike(Buffer, "le", 8)],
+    [Buffer.from("market"), marketId.toArrayLike(Buffer, "le", 8)],
     PROGRAM_ID
   );
 }
 
-export function getTicketPDA(
-  raffle: PublicKey,
-  buyer: PublicKey
+export function getPositionPDA(
+  market: PublicKey,
+  owner: PublicKey
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("ticket"), raffle.toBuffer(), buyer.toBuffer()],
+    [Buffer.from("position"), market.toBuffer(), owner.toBuffer()],
     PROGRAM_ID
   );
 }
 
-export function getVaultPDA(raffle: PublicKey): [PublicKey, number] {
+export function getVaultPDA(market: PublicKey): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("vault"), raffle.toBuffer()],
+    [Buffer.from("vault"), market.toBuffer()],
     PROGRAM_ID
+  );
+}
+
+// Derive allowance PDA for Inco Lightning
+export function deriveAllowancePda(handle: bigint, owner: PublicKey): [PublicKey, number] {
+  const buf = Buffer.alloc(16);
+  let v = handle;
+  for (let i = 0; i < 16; i++) {
+    buf[i] = Number(v & BigInt(0xff));
+    v >>= BigInt(8);
+  }
+  return PublicKey.findProgramAddressSync(
+    [buf, owner.toBuffer()],
+    INCO_LIGHTNING_PROGRAM_ID
   );
 }
 
@@ -58,26 +72,52 @@ export function handleToBuffer(handle: BN | bigint): Buffer {
   return bn.toArrayLike(Buffer, "le", 16);
 }
 
-// Raffle account type
-export interface RaffleAccount {
+// Market status enum
+export enum MarketStatus {
+  Open = 0,
+  Closed = 1,
+  ResolvedYes = 2,
+  ResolvedNo = 3,
+}
+
+export function getMarketStatusString(status: { open?: {} } | { closed?: {} } | { resolvedYes?: {} } | { resolvedNo?: {} }): string {
+  if ('open' in status) return 'Open';
+  if ('closed' in status) return 'Closed';
+  if ('resolvedYes' in status) return 'Resolved: YES';
+  if ('resolvedNo' in status) return 'Resolved: NO';
+  return 'Unknown';
+}
+
+export function isMarketOpen(status: { open?: {} } | { closed?: {} } | { resolvedYes?: {} } | { resolvedNo?: {} }): boolean {
+  return 'open' in status;
+}
+
+export function isMarketResolved(status: { open?: {} } | { closed?: {} } | { resolvedYes?: {} } | { resolvedNo?: {} }): boolean {
+  return 'resolvedYes' in status || 'resolvedNo' in status;
+}
+
+// Market account type
+export interface MarketAccount {
   authority: PublicKey;
-  raffleId: BN;
-  ticketPrice: BN;
+  marketId: BN;
+  question: string;
+  resolutionTime: BN;
+  status: { open?: {} } | { closed?: {} } | { resolvedYes?: {} } | { resolvedNo?: {} };
+  totalYesAmount: BN;
+  totalNoAmount: BN;
   participantCount: number;
-  isOpen: boolean;
-  prizeClaimed: boolean;
-  winningNumberHandle: BN;
   bump: number;
 }
 
-// Ticket account type
-export interface TicketAccount {
-  raffle: PublicKey;
+// Position account type
+export interface PositionAccount {
+  market: PublicKey;
   owner: PublicKey;
-  guessHandle: BN;
+  amount: BN;
+  encryptedSideHandle: BN;
   isWinnerHandle: BN;
   claimed: boolean;
   bump: number;
 }
 
-export { SystemProgram };
+export { SystemProgram, BN };

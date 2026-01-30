@@ -1,5 +1,5 @@
 {
-  "name": "raffle",
+  "name": "dake-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
+    "@iconify/react": "^6.0.2",
     "@inco/solana-sdk": "^0.0.2",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",

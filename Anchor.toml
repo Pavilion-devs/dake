@@ -6,13 +6,14 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-private_raffle = "4jfrTCa7eahgpyR1iVSWuircw3K9NK565owhAMJxr38Q"
+dake = "5apEYrFFuxT7yExEFz56kfmuYvc1YxcActFCMWnYpQea"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+# Use HELIUS_RPC_URL or ANCHOR_PROVIDER_URL env var for deploy/test (e.g. ANCHOR_PROVIDER_URL=$HELIUS_RPC_URL anchor deploy)
+cluster = "https://api.devnet.solana.com"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

@@ -5,3 +5,32 @@ target
 node_modules
 test-ledger
 .yarn
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+id.json
+
+# Next.js / app build outputs
+app/.next
+app/out
+app/build
+.vercel
+
+# IDE & editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# Chat logs & local dev artifacts
+**/chats.txt
+
+# TypeScript / build cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Test coverage
+coverage

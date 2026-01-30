@@ -1,489 +1,647 @@
 {
-    "address": "HY5CHkW7FEvCMdZLKrQ4w2Vr6krGtnJ1Kttd2WPqW9WC",
-    "metadata": {
-      "name": "private_raffle",
-      "version": "0.1.0",
-      "spec": "0.1.0",
-      "description": "Private raffle using Inco Lightning "
+  "address": "5apEYrFFuxT7yExEFz56kfmuYvc1YxcActFCMWnYpQea",
+  "metadata": {
+    "name": "dake",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Dake - Confidential Prediction Markets on Solana using Inco Lightning"
+  },
+  "instructions": [
+    {
+      "name": "check_winner",
+      "docs": [
+        "Check if a position is a winner (encrypted comparison)"
+      ],
+      "discriminator": [
+        246,
+        195,
+        208,
+        54,
+        162,
+        217,
+        84,
+        64
+      ],
+      "accounts": [
+        {
+          "name": "checker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market"
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "inco_lightning_program",
+          "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
+        }
+      ],
+      "args": []
     },
-    "instructions": [
-      {
-        "name": "buy_ticket",
-        "discriminator": [
-          11,
-          24,
-          17,
-          193,
-          168,
-          116,
-          164,
-          169
-        ],
-        "accounts": [
-          {
-            "name": "buyer",
-            "writable": true,
-            "signer": true
-          },
-          {
-            "name": "raffle",
-            "writable": true
-          },
-          {
-            "name": "ticket",
-            "writable": true,
-            "pda": {
-              "seeds": [
-                {
-                  "kind": "const",
-                  "value": [
-                    116,
-                    105,
-                    99,
-                    107,
-                    101,
-                    116
-                  ]
-                },
-                {
-                  "kind": "account",
-                  "path": "raffle"
-                },
-                {
-                  "kind": "account",
-                  "path": "buyer"
-                }
-              ]
-            }
-          },
-          {
-            "name": "vault",
-            "writable": true,
-            "pda": {
-              "seeds": [
-                {
-                  "kind": "const",
-                  "value": [
-                    118,
-                    97,
-                    117,
-                    108,
-                    116
-                  ]
-                },
-                {
-                  "kind": "account",
-                  "path": "raffle"
-                }
-              ]
-            }
-          },
-          {
-            "name": "system_program",
-            "address": "11111111111111111111111111111111"
-          },
-          {
-            "name": "inco_lightning_program",
-            "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
+    {
+      "name": "claim_winnings",
+      "docs": [
+        "Claim winnings by proving winner status"
+      ],
+      "discriminator": [
+        161,
+        215,
+        24,
+        59,
+        14,
+        236,
+        242,
+        221
+      ],
+      "accounts": [
+        {
+          "name": "winner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
           }
-        ],
-        "args": [
-          {
-            "name": "encrypted_guess",
-            "type": "bytes"
+        },
+        {
+          "name": "instructions",
+          "address": "Sysvar1nstructions1111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "inco_lightning_program",
+          "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
+        }
+      ],
+      "args": [
+        {
+          "name": "handle",
+          "type": "bytes"
+        },
+        {
+          "name": "plaintext",
+          "type": "bytes"
+        }
+      ]
+    },
+    {
+      "name": "close_market",
+      "docs": [
+        "Close a market for betting"
+      ],
+      "discriminator": [
+        88,
+        154,
+        248,
+        186,
+        48,
+        14,
+        123,
+        244
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_market",
+      "docs": [
+        "Create a new prediction market"
+      ],
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "market_id"
+              }
+            ]
           }
-        ]
-      },
-      {
-        "name": "check_winner",
-        "discriminator": [
-          246,
-          195,
-          208,
-          54,
-          162,
-          217,
-          84,
-          64
-        ],
-        "accounts": [
-          {
-            "name": "checker",
-            "writable": true,
-            "signer": true
-          },
-          {
-            "name": "raffle"
-          },
-          {
-            "name": "ticket",
-            "writable": true
-          },
-          {
-            "name": "system_program",
-            "address": "11111111111111111111111111111111"
-          },
-          {
-            "name": "inco_lightning_program",
-            "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
           }
-        ],
-        "args": []
-      },
-      {
-        "name": "create_raffle",
-        "discriminator": [
-          226,
-          206,
-          159,
-          34,
-          213,
-          207,
-          98,
-          126
-        ],
-        "accounts": [
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "market_id",
+          "type": "u64"
+        },
+        {
+          "name": "question",
+          "type": "string"
+        },
+        {
+          "name": "resolution_time",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "place_bet",
+      "docs": [
+        "Place a bet on a prediction market",
+        "- encrypted_side: Encrypted value (1 = YES, 0 = NO)",
+        "- amount: Bet amount in lamports",
+        "- side_for_pool: The side to update pool totals (must match encrypted value)"
+      ],
+      "discriminator": [
+        222,
+        62,
+        67,
+        220,
+        63,
+        166,
+        126,
+        33
+      ],
+      "accounts": [
+        {
+          "name": "bettor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "position",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  111,
+                  115,
+                  105,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "bettor"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "inco_lightning_program",
+          "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
+        }
+      ],
+      "args": [
+        {
+          "name": "encrypted_side",
+          "type": "bytes"
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "side_for_pool",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "resolve_market",
+      "docs": [
+        "Resolve a market with the outcome",
+        "- outcome: true = YES wins, false = NO wins"
+      ],
+      "discriminator": [
+        155,
+        23,
+        80,
+        173,
+        46,
+        74,
+        23,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "outcome",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    },
+    {
+      "name": "Position",
+      "discriminator": [
+        170,
+        188,
+        143,
+        228,
+        122,
+        64,
+        247,
+        208
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MarketNotOpen",
+      "msg": "Market is not open for betting"
+    },
+    {
+      "code": 6001,
+      "name": "MarketStillOpen",
+      "msg": "Market is still open"
+    },
+    {
+      "code": 6002,
+      "name": "MarketNotResolved",
+      "msg": "Market is not resolved yet"
+    },
+    {
+      "code": 6003,
+      "name": "MarketAlreadyResolved",
+      "msg": "Market is already resolved"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidBetAmount",
+      "msg": "Bet amount must be greater than zero"
+    },
+    {
+      "code": 6005,
+      "name": "NotOwner",
+      "msg": "Not the position owner"
+    },
+    {
+      "code": 6006,
+      "name": "AlreadyClaimed",
+      "msg": "Position already claimed"
+    },
+    {
+      "code": 6007,
+      "name": "NotChecked",
+      "msg": "Position not checked yet - call check_winner first"
+    },
+    {
+      "code": 6008,
+      "name": "NotWinner",
+      "msg": "Not a winner - cannot claim"
+    },
+    {
+      "code": 6009,
+      "name": "Unauthorized",
+      "msg": "Unauthorized - not the market authority"
+    },
+    {
+      "code": 6010,
+      "name": "NoFunds",
+      "msg": "No funds in vault"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidSide",
+      "msg": "Invalid side - must be 0 (NO) or 1 (YES)"
+    },
+    {
+      "code": 6012,
+      "name": "ResolutionTimeNotReached",
+      "msg": "Resolution time not reached yet"
+    },
+    {
+      "code": 6013,
+      "name": "QuestionTooLong",
+      "msg": "Question too long - max 256 characters"
+    }
+  ],
+  "types": [
+    {
+      "name": "Market",
+      "docs": [
+        "Prediction Market account",
+        "",
+        "Privacy model:",
+        "- Individual bet SIDES (YES/NO) are encrypted - nobody knows your position",
+        "- Bet AMOUNTS are public - needed for proportional payout calculation",
+        "- On resolution, winners prove their side via decryption to claim"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
             "name": "authority",
-            "writable": true,
-            "signer": true
+            "docs": [
+              "Authority who can resolve the market"
+            ],
+            "type": "pubkey"
           },
           {
-            "name": "raffle",
-            "writable": true,
-            "pda": {
-              "seeds": [
-                {
-                  "kind": "const",
-                  "value": [
-                    114,
-                    97,
-                    102,
-                    102,
-                    108,
-                    101
-                  ]
-                },
-                {
-                  "kind": "arg",
-                  "path": "raffle_id"
-                }
-              ]
-            }
-          },
-          {
-            "name": "vault",
-            "writable": true,
-            "pda": {
-              "seeds": [
-                {
-                  "kind": "const",
-                  "value": [
-                    118,
-                    97,
-                    117,
-                    108,
-                    116
-                  ]
-                },
-                {
-                  "kind": "account",
-                  "path": "raffle"
-                }
-              ]
-            }
-          },
-          {
-            "name": "system_program",
-            "address": "11111111111111111111111111111111"
-          }
-        ],
-        "args": [
-          {
-            "name": "raffle_id",
+            "name": "market_id",
+            "docs": [
+              "Unique market identifier"
+            ],
             "type": "u64"
           },
           {
-            "name": "ticket_price",
+            "name": "question",
+            "docs": [
+              "The prediction question (e.g., \"Will SOL hit $500 by March 2026?\")"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "resolution_time",
+            "docs": [
+              "When the market can be resolved (Unix timestamp)"
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "status",
+            "docs": [
+              "Current market status"
+            ],
+            "type": {
+              "defined": {
+                "name": "MarketStatus"
+              }
+            }
+          },
+          {
+            "name": "total_yes_amount",
+            "docs": [
+              "Total amount bet on YES side (public, for payout calculation)"
+            ],
             "type": "u64"
-          }
-        ]
-      },
-      {
-        "name": "draw_winner",
-        "docs": [
-          "Draw a random winning number (1-100) using on-chain randomness"
-        ],
-        "discriminator": [
-          250,
-          103,
-          118,
-          147,
-          219,
-          235,
-          169,
-          220
-        ],
-        "accounts": [
-          {
-            "name": "authority",
-            "writable": true,
-            "signer": true
           },
           {
-            "name": "raffle",
-            "writable": true
+            "name": "total_no_amount",
+            "docs": [
+              "Total amount bet on NO side (public, for payout calculation)"
+            ],
+            "type": "u64"
           },
           {
-            "name": "system_program",
-            "address": "11111111111111111111111111111111"
+            "name": "participant_count",
+            "docs": [
+              "Number of participants"
+            ],
+            "type": "u32"
           },
           {
-            "name": "inco_lightning_program",
-            "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
-          }
-        ],
-        "args": []
-      },
-      {
-        "name": "withdraw_prize",
-        "docs": [
-          "Withdraw prize by proving winner status (is_winner_handle decryption)"
-        ],
-        "discriminator": [
-          125,
-          86,
-          6,
-          204,
-          176,
-          159,
-          61,
-          119
-        ],
-        "accounts": [
-          {
-            "name": "winner",
-            "writable": true,
-            "signer": true
-          },
-          {
-            "name": "raffle",
-            "writable": true
-          },
-          {
-            "name": "ticket",
-            "writable": true
-          },
-          {
-            "name": "vault",
-            "writable": true,
-            "pda": {
-              "seeds": [
-                {
-                  "kind": "const",
-                  "value": [
-                    118,
-                    97,
-                    117,
-                    108,
-                    116
-                  ]
-                },
-                {
-                  "kind": "account",
-                  "path": "raffle"
-                }
-              ]
-            }
-          },
-          {
-            "name": "instructions",
-            "address": "Sysvar1nstructions1111111111111111111111111"
-          },
-          {
-            "name": "system_program",
-            "address": "11111111111111111111111111111111"
-          },
-          {
-            "name": "inco_lightning_program",
-            "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
-          }
-        ],
-        "args": [
-          {
-            "name": "handle",
-            "type": "bytes"
-          },
-          {
-            "name": "plaintext",
-            "type": "bytes"
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
           }
         ]
       }
-    ],
-    "accounts": [
-      {
-        "name": "Raffle",
-        "discriminator": [
-          143,
-          133,
-          63,
-          173,
-          138,
-          10,
-          142,
-          200
-        ]
-      },
-      {
-        "name": "Ticket",
-        "discriminator": [
-          41,
-          228,
-          24,
-          165,
-          78,
-          90,
-          235,
-          200
+    },
+    {
+      "name": "MarketStatus",
+      "docs": [
+        "Market status enum"
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Open"
+          },
+          {
+            "name": "Closed"
+          },
+          {
+            "name": "ResolvedYes"
+          },
+          {
+            "name": "ResolvedNo"
+          }
         ]
       }
-    ],
-    "errors": [
-      {
-        "code": 6000,
-        "name": "RaffleClosed",
-        "msg": "Raffle is closed"
-      },
-      {
-        "code": 6001,
-        "name": "RaffleStillOpen",
-        "msg": "Raffle is still open"
-      },
-      {
-        "code": 6002,
-        "name": "NoWinningNumber",
-        "msg": "No winning number set"
-      },
-      {
-        "code": 6003,
-        "name": "NoParticipants",
-        "msg": "No participants"
-      },
-      {
-        "code": 6004,
-        "name": "NotOwner",
-        "msg": "Not ticket owner"
-      },
-      {
-        "code": 6005,
-        "name": "AlreadyClaimed",
-        "msg": "Already claimed"
-      },
-      {
-        "code": 6006,
-        "name": "NotChecked",
-        "msg": "Ticket not checked yet"
-      },
-      {
-        "code": 6007,
-        "name": "NotClaimed",
-        "msg": "Not claimed yet"
-      },
-      {
-        "code": 6008,
-        "name": "NotWinner",
-        "msg": "Not the winner"
-      },
-      {
-        "code": 6009,
-        "name": "Unauthorized",
-        "msg": "Unauthorized"
-      },
-      {
-        "code": 6010,
-        "name": "NoFunds",
-        "msg": "No funds in vault"
+    },
+    {
+      "name": "Position",
+      "docs": [
+        "User's position in a market",
+        "",
+        "Privacy: The SIDE (YES=1, NO=0) is stored as an encrypted handle.",
+        "Nobody can see which side you bet on until you choose to reveal (or claim winnings)."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "market",
+            "docs": [
+              "The market this position belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "owner",
+            "docs": [
+              "Owner of this position"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Bet amount in lamports (public - needed for payout calculation)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "encrypted_side_handle",
+            "docs": [
+              "Encrypted side handle: 1 = YES, 0 = NO (private!)"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "is_winner_handle",
+            "docs": [
+              "Encrypted result of (user_side == winning_side) comparison"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "claimed",
+            "docs": [
+              "Whether winnings have been claimed"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
       }
-    ],
-    "types": [
-      {
-        "name": "Raffle",
-        "docs": [
-          "Raffle account"
-        ],
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "authority",
-              "type": "pubkey"
-            },
-            {
-              "name": "raffle_id",
-              "type": "u64"
-            },
-            {
-              "name": "ticket_price",
-              "type": "u64"
-            },
-            {
-              "name": "participant_count",
-              "type": "u32"
-            },
-            {
-              "name": "is_open",
-              "type": "bool"
-            },
-            {
-              "name": "prize_claimed",
-              "type": "bool"
-            },
-            {
-              "name": "winning_number_handle",
-              "type": "u128"
-            },
-            {
-              "name": "bump",
-              "type": "u8"
-            }
-          ]
-        }
-      },
-      {
-        "name": "Ticket",
-        "docs": [
-          "Ticket account"
-        ],
-        "type": {
-          "kind": "struct",
-          "fields": [
-            {
-              "name": "raffle",
-              "type": "pubkey"
-            },
-            {
-              "name": "owner",
-              "type": "pubkey"
-            },
-            {
-              "name": "guess_handle",
-              "type": "u128"
-            },
-            {
-              "name": "is_winner_handle",
-              "type": "u128"
-            },
-            {
-              "name": "claimed",
-              "type": "bool"
-            },
-            {
-              "name": "bump",
-              "type": "u8"
-            }
-          ]
-        }
-      }
-    ]
+    }
+  ]
 }
