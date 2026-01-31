@@ -20,6 +20,8 @@ import {
 } from "@/lib/program";
 import { useMarketByPubkey } from "@/hooks/useMarketByPubkey";
 import idl from "@/lib/idl.json";
+import AIChatPanel from "@/components/app/AIChatPanel";
+import { MarketContext } from "@/types/chat";
 
 export default function MarketDetailPage({
   params,
@@ -38,6 +40,7 @@ export default function MarketDetailPage({
   const [placingBet, setPlacingBet] = useState(false);
   const [betError, setBetError] = useState<string | null>(null);
   const [betSuccess, setBetSuccess] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Check if user already has a position
   const [userPosition, setUserPosition] = useState<PositionAccount | null>(null);
@@ -663,6 +666,36 @@ export default function MarketDetailPage({
           </div>
         </div>
       </div>
+      {/* AI Chat Toggle Button */}
+      {odds && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 flex items-center gap-2 px-5 py-3 bg-[#FACC15] text-neutral-900 rounded-full font-medium text-sm shadow-lg shadow-[#FACC15]/20 hover:bg-[#FACC15]/90 transition-all z-30"
+        >
+          <Icon icon="solar:magic-stick-3-linear" width={20} />
+          AI Analysis
+        </button>
+      )}
+
+      {/* AI Chat Panel */}
+      {odds && (
+        <AIChatPanel
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
+          market={{
+            question: market.question,
+            status: getMarketStatusString(market.status),
+            totalYesAmount: yesPool,
+            totalNoAmount: noPool,
+            yesProbability: odds.yesProbability,
+            noProbability: odds.noProbability,
+            participantCount: market.participantCount,
+            resolutionDate: new Date(
+              market.resolutionTime.toNumber() * 1000
+            ).toLocaleDateString(),
+          }}
+        />
+      )}
     </main>
   );
 }

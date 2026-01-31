@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dake - Confidential Prediction Markets on Solana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===========================================
+           THEME
+           =========================================== */
+        :root {
+            --bg: #0f0f11;
+            --bg-card: rgba(255,255,255,0.03);
+            --text: #ffffff;
+            --text-muted: #94a3b8;
+            --accent: #FACC15;
+            --accent-glow: rgba(250, 204, 21, 0.15);
+            --green: #34d399;
+            --red: #f87171;
+            --border: rgba(255,255,255,0.08);
+            --font-display: 'DM Sans', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y mandatory;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* ===========================================
+           SLIDE BASE
+           =========================================== */
+        .slide {
+            min-height: 100vh;
+            padding: clamp(2rem, 5vw, 5rem);
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide-inner {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* ===========================================
+           ANIMATIONS
+           =========================================== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+        }
+        .slide.visible .reveal { opacity: 1; transform: translateY(0); }
+        .slide.visible .reveal:nth-child(1) { transition-delay: 0.05s; }
+        .slide.visible .reveal:nth-child(2) { transition-delay: 0.15s; }
+        .slide.visible .reveal:nth-child(3) { transition-delay: 0.25s; }
+        .slide.visible .reveal:nth-child(4) { transition-delay: 0.35s; }
+        .slide.visible .reveal:nth-child(5) { transition-delay: 0.45s; }
+        .slide.visible .reveal:nth-child(6) { transition-delay: 0.55s; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { transition: opacity 0.3s ease; transform: none; }
+        }
+
+        /* ===========================================
+           TYPOGRAPHY
+           =========================================== */
+        .slide-label {
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-family: var(--font-display);
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2vw, 1.35rem);
+            color: var(--text-muted);
+            line-height: 1.6;
+            max-width: 650px;
+            margin-top: 1.25rem;
+        }
+
+        .accent { color: var(--accent); }
+        .green { color: var(--green); }
+
+        /* ===========================================
+           COMPONENTS
+           =========================================== */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+        }
+
+        .badge-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-top: 2.5rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .card:hover { border-color: rgba(250,204,21,0.2); }
+
+        .card-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Flow diagram */
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 2.5rem;
+            justify-content: center;
+        }
+
+        .flow-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .flow-step .step-num {
+            display: block;
+            font-size: 0.65rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+
+        .flow-arrow {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+        }
+
+        /* Stats */
+        .stat-row {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stat h3 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Privacy table */
+        .privacy-table {
+            width: 100%;
+            margin-top: 2rem;
+            border-collapse: collapse;
+        }
+
+        .privacy-table th, .privacy-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .privacy-table th {
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .privacy-table td:first-child { font-weight: 500; }
+
+        .tag-hidden {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(250,204,21,0.1);
+            color: var(--accent);
+        }
+
+        .tag-visible {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(52,211,153,0.1);
+            color: var(--green);
+        }
+
+        /* Demo slide */
+        .demo-frame {
+            margin-top: 2.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .demo-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2.5rem;
+            background: var(--accent);
+            color: #0f0f11;
+            border: none;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+
+        /* Roadmap */
+        .roadmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-top: 2.5rem;
+        }
+
+        .roadmap-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.5rem;
+        }
+
+        .roadmap-item .phase {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+
+        .roadmap-item h3 {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .roadmap-item ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .roadmap-item li {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            padding: 0.2rem 0;
+        }
+
+        .roadmap-item li::before {
+            content: "~";
+            color: var(--accent);
+            margin-right: 0.4rem;
+        }
+
+        /* CTA */
+        .cta-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: transform 0.2s ease;
+        }
+
+        .cta-link:hover { transform: translateY(-1px); }
+
+        .cta-primary {
+            background: var(--accent);
+            color: #0f0f11;
+        }
+
+        .cta-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        /* ===========================================
+           PROGRESS BAR
+           =========================================== */
+        .progress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 100;
+            transition: width 0.3s ease;
+        }
+
+        /* ===========================================
+           NAV DOTS
+           =========================================== */
+        .nav-dots {
+            position: fixed;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .nav-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            z-index: 100;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ===========================================
+           BACKGROUND EFFECTS
+           =========================================== */
+        .glow-tl {
+            position: absolute;
+            top: -20%; left: -10%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .glow-br {
+            position: absolute;
+            bottom: -20%; right: -10%;
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+        }
+
+        /* ===========================================
+           RESPONSIVE
+           =========================================== */
+        @media (max-width: 768px) {
+            .nav-dots, .slide-counter { display: none; }
+            .card-grid { grid-template-columns: 1fr; }
+            .stat-row { gap: 1.5rem; }
+            .flow { gap: 0.35rem; }
+            .flow-step { padding: 0.6rem 0.9rem; font-size: 0.75rem; }
+            .flow-arrow { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<nav class="nav-dots" id="navDots"></nav>
+
+<div class="slide-counter" id="slideCounter"></div>
+
+<!-- ============================================
+     SLIDE 1: TITLE
+     ============================================ -->
+<section class="slide" id="s1">
+    <div class="glow-tl"></div>
+    <div class="grid-bg"></div>
+    <div class="slide-inner">
+        <div class="badge reveal"><span class="badge-dot"></span> Built on Solana x Inco Network</div>
+        <h1 class="reveal">Dake</h1>
+        <h1 class="reveal" style="color: var(--accent); margin-top: 0.25rem;">Confidential Prediction Markets</h1>
+        <p class="subtitle reveal">The first prediction market where your bets are encrypted on-chain. No one can see which side you picked &mdash; not even the blockchain.</p>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 2: THE PROBLEM
+     ============================================ -->
+<section class="slide" id="s2">
+    <div class="slide-inner">
+        <p class="slide-label reveal">The Problem</p>
+        <h2 class="reveal">Prediction markets have a <span class="accent">privacy problem</span></h2>
+        <p class="subtitle reveal">On every existing platform, your bets are public. This creates real consequences.</p>
+        <div class="card-grid">
+            <div class="card reveal">
+                <div class="card-icon" style="background: rgba(248,113,113,0.1);">&#128065;</div>
+                <h3>Front-Running</h3>
+                <p>Whales see your bet, copy your position, and move the odds against you before your trade settles.</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background: rgba(248,113,113,0.1);">&#128176;</div>
+                <h3>Market Manipulation</h3>
+                <p>Traders coordinate based on visible order flow. Large bets shift sentiment before markets resolve.</p>
+            </div>
+            <div class="card reveal">
+                <div class="card-icon" style="background: rgba(248,113,113,0.1);">&#129504;</div>
+                <h3>Social Pressure</h3>
+                <p>On-chain history reveals your political, financial, and social views to anyone who looks at your wallet.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 3: THE SOLUTION
+     ============================================ -->
+<section class="slide" id="s3">
+    <div class="glow-br"></div>
+    <div class="slide-inner">
+        <p class="slide-label reveal">The Solution</p>
+        <h2 class="reveal">Bet privately. <span class="accent">Verify publicly.</span></h2>
+        <p class="subtitle reveal">Dake uses Fully Homomorphic Encryption (FHE) via Inco Network to encrypt your bet side on-chain. The blockchain verifies everything &mdash; without ever seeing your choice.</p>
+
+        <table class="privacy-table reveal" style="margin-top: 2.5rem;">
+            <thead>
+                <tr><th>Data</th><th>Traditional Markets</th><th>Dake</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Your bet side (YES/NO)</td><td><span class="tag-visible">Public</span></td><td><span class="tag-hidden">Encrypted</span></td></tr>
+                <tr><td>Bet amount</td><td><span class="tag-visible">Public</span></td><td><span class="tag-visible">Public</span></td></tr>
+                <tr><td>Winner verification</td><td><span class="tag-visible">Public</span></td><td><span class="tag-hidden">FHE Proof</span></td></tr>
+                <tr><td>Payout claim</td><td><span class="tag-visible">Public</span></td><td><span class="tag-hidden">Ed25519 Attested</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 4: HOW IT WORKS
+     ============================================ -->
+<section class="slide" id="s4">
+    <div class="slide-inner">
+        <p class="slide-label reveal">How It Works</p>
+        <h2 class="reveal">Simple flow, <span class="accent">powerful privacy</span></h2>
+
+        <div class="flow reveal">
+            <div class="flow-step"><span class="step-num">Step 1</span>Place Bet<br><small style="color:var(--text-muted)">Side encrypted via FHE</small></div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-step"><span class="step-num">Step 2</span>Market Resolves<br><small style="color:var(--text-muted)">Admin sets outcome</small></div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-step"><span class="step-num">Step 3</span>Check Winner<br><small style="color:var(--text-muted)">Encrypted comparison</small></div>
+            <span class="flow-arrow">&rarr;</span>
+            <div class="flow-step"><span class="step-num">Step 4</span>Claim Payout<br><small style="color:var(--text-muted)">Ed25519 proof on-chain</small></div>
+        </div>
+
+        <div class="card-grid" style="margin-top: 2.5rem;">
+            <div class="card reveal">
+                <h3>&#128274; Inco FHE</h3>
+                <p>Your YES/NO choice is encrypted using <code style="background:rgba(255,255,255,0.08);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.8rem;">@inco/solana-sdk</code> before hitting the chain. No one &mdash; not even validators &mdash; can read it.</p>
+            </div>
+            <div class="card reveal">
+                <h3>&#9989; On-Chain Verification</h3>
+                <p>Winner determination uses encrypted equality (<code style="background:rgba(255,255,255,0.08);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.8rem;">e_eq</code>). The result stays encrypted until the owner decrypts it.</p>
+            </div>
+            <div class="card reveal">
+                <h3>&#129302; AI Analysis</h3>
+                <p>Built-in AI analyst with real-time web search helps users make informed decisions. Powered by OpenAI with live data.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 5: TECH STACK
+     ============================================ -->
+<section class="slide" id="s5">
+    <div class="slide-inner">
+        <p class="slide-label reveal">Tech Stack</p>
+        <h2 class="reveal">Built with <span class="accent">production-grade</span> tools</h2>
+
+        <div class="stat-row reveal">
+            <div class="stat"><h3>Solana</h3><p>Anchor Framework</p></div>
+            <div class="stat"><h3>Inco</h3><p>FHE Encryption</p></div>
+            <div class="stat"><h3>Next.js</h3><p>React Frontend</p></div>
+            <div class="stat"><h3>OpenAI</h3><p>AI Market Analysis</p></div>
+        </div>
+
+        <div class="card-grid" style="margin-top: 2rem;">
+            <div class="card reveal">
+                <h3>Solana Program</h3>
+                <p>Anchor-based smart contract handling markets, positions, encrypted bets, and parimutuel payouts. Deployed on devnet.</p>
+            </div>
+            <div class="card reveal">
+                <h3>Inco Lightning SDK</h3>
+                <p>FHE operations: <code style="background:rgba(255,255,255,0.08);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.8rem;">as_euint128</code>, <code style="background:rgba(255,255,255,0.08);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.8rem;">e_eq</code>, <code style="background:rgba(255,255,255,0.08);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.8rem;">allow</code>, attested decrypt for on-chain privacy.</p>
+            </div>
+            <div class="card reveal">
+                <h3>AI-Powered Insights</h3>
+                <p>OpenAI Responses API with web search tool. Real-time analysis of market questions with cited sources.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 6: LIVE DEMO
+     ============================================ -->
+<section class="slide" id="s6">
+    <div class="glow-tl"></div>
+    <div class="slide-inner" style="text-align: center;">
+        <p class="slide-label reveal">Live Demo</p>
+        <h2 class="reveal">Let's see it <span class="accent">in action</span></h2>
+        <p class="subtitle reveal" style="margin-left:auto;margin-right:auto;">Watch the full flow: create a market, place an encrypted bet, resolve, check winner, and claim winnings &mdash; all with your bet side hidden.</p>
+        <div class="demo-frame reveal">
+            <p style="font-size: 3rem; margin-bottom: 1rem;">&#127916;</p>
+            <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.95rem;">Switching to live app...</p>
+            <button class="demo-btn" onclick="window.open('/markets','_blank')">&#9654;&ensp;Open Dake App</button>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     SLIDE 7: ROADMAP & CLOSING
+     ============================================ -->
+<section class="slide" id="s7">
+    <div class="glow-br"></div>
+    <div class="slide-inner">
+        <p class="slide-label reveal">What's Next</p>
+        <h2 class="reveal">Roadmap</h2>
+        <div class="roadmap">
+            <div class="roadmap-item reveal">
+                <div class="phase">Now</div>
+                <h3>Hackathon MVP</h3>
+                <ul>
+                    <li>Encrypted betting (FHE)</li>
+                    <li>Parimutuel payouts</li>
+                    <li>AI market analysis</li>
+                    <li>Full claim flow</li>
+                </ul>
+            </div>
+            <div class="roadmap-item reveal">
+                <div class="phase">Next</div>
+                <h3>Enhanced Privacy</h3>
+                <ul>
+                    <li>Encrypted bet amounts</li>
+                    <li>Multi-outcome markets</li>
+                    <li>Oracle integration</li>
+                    <li>Mobile-first UI</li>
+                </ul>
+            </div>
+            <div class="roadmap-item reveal">
+                <div class="phase">Future</div>
+                <h3>Mainnet Launch</h3>
+                <ul>
+                    <li>Mainnet deployment</li>
+                    <li>Community governance</li>
+                    <li>API for market creators</li>
+                    <li>Liquidity incentives</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="text-align:center; margin-top: 4rem;">
+            <h2 class="reveal" style="font-size: clamp(1.5rem, 3vw, 2.2rem);">Prediction markets should be <span class="accent">private by default.</span></h2>
+            <p class="subtitle reveal" style="margin-left:auto;margin-right:auto;">Dake makes it possible with FHE on Solana.</p>
+            <div class="cta-links reveal" style="justify-content:center; margin-top: 1.5rem;">
+                <a class="cta-link cta-primary" href="https://github.com/favoursyre/dake" target="_blank">&#128187;&ensp;GitHub</a>
+                <a class="cta-link cta-secondary" href="/markets">&#127919;&ensp;Try Dake</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    /* ===========================================
+       PRESENTATION CONTROLLER
+       =========================================== */
+    class SlidePresentation {
+        constructor() {
+            this.slides = document.querySelectorAll('.slide');
+            this.dots = document.getElementById('navDots');
+            this.progress = document.getElementById('progress');
+            this.counter = document.getElementById('slideCounter');
+            this.current = 0;
+            this.total = this.slides.length;
+
+            this.createDots();
+            this.setupObserver();
+            this.setupKeyboard();
+            this.updateCounter(0);
+        }
+
+        createDots() {
+            this.slides.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+                dot.addEventListener('click', () => {
+                    this.slides[i].scrollIntoView({ behavior: 'smooth' });
+                });
+                this.dots.appendChild(dot);
+            });
+        }
+
+        setupObserver() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        const idx = Array.from(this.slides).indexOf(entry.target);
+                        this.current = idx;
+                        this.updateDots(idx);
+                        this.updateProgress(idx);
+                        this.updateCounter(idx);
+                    }
+                });
+            }, { threshold: 0.4 });
+
+            this.slides.forEach(s => observer.observe(s));
+        }
+
+        setupKeyboard() {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    const next = Math.min(this.current + 1, this.total - 1);
+                    this.slides[next].scrollIntoView({ behavior: 'smooth' });
+                }
+                if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const prev = Math.max(this.current - 1, 0);
+                    this.slides[prev].scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
+
+        updateDots(idx) {
+            this.dots.querySelectorAll('.nav-dot').forEach((d, i) => {
+                d.classList.toggle('active', i === idx);
+            });
+        }
+
+        updateProgress(idx) {
+            const pct = ((idx + 1) / this.total) * 100;
+            this.progress.style.width = pct + '%';
+        }
+
+        updateCounter(idx) {
+            this.counter.textContent = `${idx + 1} / ${this.total}`;
+        }
+    }
+
+    new SlidePresentation();
+</script>
+</body>
+</html>

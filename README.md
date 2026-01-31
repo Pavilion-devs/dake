@@ -1,225 +1,97 @@
-# Private Raffle
+# Dake - Confidential Prediction Markets on Solana
 
-A confidential raffle system built on Solana using Inco Lightning rust SDK for encrypted compute on Solana. Players submit encrypted guesses, and the winning number remains hidden until verification, ensuring complete privacy throughout the game.
+The first prediction market where your bets are encrypted on-chain using Fully Homomorphic Encryption (FHE). No one can see which side you picked — not even the blockchain.
 
-## Overview
+**Built with Solana + Inco Network + OpenAI**
 
-This program implements a simple number-guessing raffle (1-100) where:
+## How It Works
 
-- Player guesses are encrypted and hidden from everyone
-- The winning number is encrypted and hidden from everyone
-- Winner determination happens through encrypted comparison
-- Only the ticket owner can decrypt their result
+1. **Place a bet** — Your YES/NO choice is encrypted via Inco FHE before hitting the chain
+2. **Market resolves** — Admin sets the outcome (YES or NO)
+3. **Check winner** — Encrypted comparison determines if you won (no one sees your side)
+4. **Claim payout** — Ed25519 attested proof verifies your win on-chain, SOL is transferred
 
-## Architecture
-
-### Privacy Model
+## Privacy Model
 
 | Data | Visibility |
-|------|------------|
-| Player's guess | Encrypted (only player can decrypt) |
-| Winning number | Encrypted (set by authority) |
-| Win/loss result | Encrypted (only ticket owner can decrypt) |
-| Prize amount | Encrypted (only ticket owner can decrypt) |
+|------|-----------|
+| Your bet side (YES/NO) | Encrypted (FHE) |
+| Bet amount | Public |
+| Winner result | Encrypted (only you can decrypt) |
+| Payout claim | Verified via Ed25519 proof |
 
-### Program Flow
+## Features
 
-```
-1. create_raffle    -> Authority creates raffle with ticket price
-2. buy_ticket        -> Player submits encrypted guess (1-100)
-3. draw_winner       -> Authority sets encrypted winning number
-4. check_winner      -> Encrypted comparison: guess == winning_number
-5. claim_prize       -> e_select(is_winner, prize, 0) computes encrypted prize
-6. withdraw_prize    -> On-chain signature verification, transfer if prize > 0
-```
+- **Encrypted betting** — Bet side hidden using `@inco/solana-sdk` encryption
+- **Parimutuel odds** — Dynamic odds based on pool ratios with locked payouts
+- **AI Market Analysis** — Built-in AI chatbot with real-time web search (OpenAI) to help analyze markets
+- **On-chain verification** — Winner claims verified via Inco attested decrypt + Ed25519 signatures
 
-### Key Encrypted Operations
+## Tech Stack
 
-- `new_euint128`: Create encrypted value from ciphertext
-- `e_eq`: Encrypted equality comparison
-- `e_select`: Encrypted conditional selection
-- `allow`: Grant decryption permission to specific address
-- `is_validsignature`: Verify decryption proof on-chain
+- **Program**: Solana (Anchor Framework), Inco Lightning SDK (FHE)
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
+- **AI**: OpenAI Responses API with web search
 
-## Account Structures
+## Quick Start
 
-### Raffle
+### Prerequisites
 
-```rust
-pub struct Raffle {
-    pub authority: Pubkey,
-    pub raffle_id: u64,
-    pub ticket_price: u64,
-    pub participant_count: u32,
-    pub is_open: bool,
-    pub prize_claimed: bool,                // True when a winner has withdrawn
-    pub winning_number_handle: u128,        // Encrypted winning number (1-100)
-    pub bump: u8,
-}
-```
-
-### Ticket
-
-```rust
-pub struct Ticket {
-    pub raffle: Pubkey,
-    pub owner: Pubkey,
-    pub guess_handle: u128,       // Encrypted guess (1-100)
-    pub is_winner_handle: u128,   // Encrypted: guess == winning?
-    pub claimed: bool,            // Whether this ticket holder has withdrawn
-    pub bump: u8,
-}
-```
-
-## Prerequisites
-
-- Rust 1.70+
-- Solana CLI 1.18+
-- Anchor 0.31.1
 - Node.js 18+
-- Yarn
+- Solana CLI & Anchor 0.31.1 (for program development only)
 
-## Installation
-
-```bash
-# Clone repository
-git clone https://github.com/Inco-fhevm/raffle-example-solana
-cd raffle-example-solana
-
-# Install dependencies
-yarn install
-
-# Copy env template and add your Helius API key (get one at https://dev.helius.xyz/)
-cp .env.example .env
-# Edit .env and set HELIUS_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_KEY
-
-# Build program
-anchor build
-```
-
-## Deployment
-
-```bash
-# Get program keypair address
-solana address -k target/deploy/keypair.json
-
-# Update program ID in lib.rs and Anchor.toml with the address above
-
-# Rebuild with correct program ID
-anchor build
-
-# Deploy to devnet (uses HELIUS_RPC_URL or ANCHOR_PROVIDER_URL from .env)
-source .env 2>/dev/null || true
-yarn run deploy:devnet
-# Or: anchor deploy --provider.cluster $HELIUS_RPC_URL
-```
-
-## Testing
-
-```bash
-# Run tests (loads .env automatically; uses HELIUS_RPC_URL for RPC)
-anchor test --skip-deploy
-```
-
-### Test Scenarios
-
-The test suite covers two scenarios:
-
-1. **Winner Flow**: Player guesses correctly and withdraws prize
-2. **Non-Winner Flow**: Player guesses incorrectly and withdrawal fails
-
-## Usage
-
-### Client Integration
-
-```typescript
-import { encryptValue } from "@inco/solana-sdk/encryption";
-import { decrypt } from "@inco/solana-sdk/attested-decrypt";
-import { hexToBuffer } from "@inco/solana-sdk/utils";
-
-// Encrypt guess
-const myGuess = 42;
-const encryptedGuess = await encryptValue(BigInt(myGuess));
-
-// Buy ticket
-await program.methods
-  .buyTicket(hexToBuffer(encryptedGuess))
-  .accounts({...})
-  .rpc();
-
-// Decrypt result after checking
-const result = await decrypt([resultHandle], {
-  address: wallet.publicKey,
-  signMessage: async (msg) => nacl.sign.detached(msg, wallet.secretKey),
-});
-
-const isWinner = result.plaintexts[0] === "1";
-```
-
-### Allow Pattern for Decryption
-
-To decrypt encrypted values, the program must grant permission via the `allow` instruction. This is done through remaining accounts:
-
-```typescript
-const [allowancePda] = PublicKey.findProgramAddressSync(
-  [handleBuffer, walletPublicKey.toBuffer()],
-  INCO_LIGHTNING_PROGRAM_ID
-);
-
-await program.methods
-  .checkWinner()
-  .accounts({...})
-  .remainingAccounts([
-    { pubkey: allowancePda, isSigner: false, isWritable: true },
-    { pubkey: wallet.publicKey, isSigner: false, isWritable: false },
-  ])
-  .rpc();
-```
-
-### On-Chain Verification
-
-Prize withdrawal requires on-chain verification of the decryption proof:
-
-```typescript
-const result = await decrypt([prizeHandle], {...});
-
-// Build transaction with Ed25519 signature + withdraw instruction
-const tx = new Transaction();
-result.ed25519Instructions.forEach(ix => tx.add(ix));
-tx.add(withdrawInstruction);
-```
-
-## Dependencies
-
-### Rust
-
-```toml
-[dependencies]
-anchor-lang = "0.31.1"
-inco-lightning = { version = "0.1.4", features = ["cpi"] }
-```
-
-## Setting up Frontend:
-
-Navigate to the app folder:
+### Run the Frontend
 
 ```bash
 cd app
+cp .env.example .env.local
+# Edit .env.local with your RPC URL and OpenAI API key
+npm install
+npm run dev
 ```
-Install the dependencies:
+
+App runs at `http://localhost:3000`
+
+### Environment Variables
+
+```
+NEXT_PUBLIC_SOLANA_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_KEY
+NEXT_PUBLIC_PROGRAM_ID=5apEYrFFuxT7yExEFz56kfmuYvc1YxcActFCMWnYpQea
+OPENAI_API_KEY=sk-...
+```
+
+### Deploy the Solana Program (optional)
+
 ```bash
-bun install
+# Install dependencies
+yarn install
+
+# Build and deploy
+anchor build
+anchor deploy --provider.cluster devnet
 ```
 
-Start the app:
+## Project Structure
 
-```bash
-bun run dev
+```
+programs/dake/src/
+  instructions/
+    create_market.rs    # Create prediction markets
+    place_bet.rs        # Place encrypted bets (FHE)
+    check_winner.rs     # Encrypted winner determination
+    claim_winnings.rs   # On-chain verified payout
+  state/                # Market & Position account structs
+
+app/src/
+  app/
+    markets/[id]/       # Market detail page with betting UI
+    portfolio/          # View positions & claim winnings
+    admin/              # Market management
+    api/chat/           # AI analysis streaming endpoint
+  components/
+    app/AIChatPanel.tsx # Slide-in AI chat with web search
 ```
 
-The app will start on localhost:3000
+## License
 
-
-
-
-
+MIT
