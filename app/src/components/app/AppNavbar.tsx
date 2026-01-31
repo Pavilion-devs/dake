@@ -36,12 +36,6 @@ export default function AppNavbar() {
           >
             Portfolio
           </Link>
-          <Link
-            href="/admin"
-            className="text-slate-400 hover:text-white transition-colors text-sm font-medium"
-          >
-            Admin
-          </Link>
         </div>
       </div>
 

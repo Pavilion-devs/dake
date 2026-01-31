@@ -69,7 +69,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CheckWinner<'info>>) -> Re
 
     position.is_winner_handle = is_winner.0;
 
-    // Allow position owner to decrypt the result
+    // Grant decrypt access to the position owner (must be in same TX as the operation)
     if ctx.remaining_accounts.len() >= 2 {
         let cpi_ctx = CpiContext::new(
             inco,
@@ -85,7 +85,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, CheckWinner<'info>>) -> Re
 
     msg!("Position checked for Dake Market #{}!", market.market_id);
     msg!("   Owner: {}", position.owner);
-    msg!("   Is winner handle: {} (decrypt to see result)", is_winner.0);
+    msg!("   Is winner handle: {}", is_winner.0);
 
     Ok(())
 }

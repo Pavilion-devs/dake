@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
@@ -11,11 +11,38 @@ import { PROGRAM_ID, getMarketPDA, getVaultPDA, isMarketOpen, isMarketResolved, 
 import { useMarkets, MarketWithPubkey } from "@/hooks/useMarkets";
 import idl from "@/lib/idl.json";
 
+// Admin password - in production, use environment variable
+const ADMIN_PASSWORD = "dake2026";
+
 export default function AdminPage() {
   const { publicKey, signTransaction, signAllTransactions, connected } = useWallet();
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { markets, loading: marketsLoading, refetch } = useMarkets();
+
+  // Password protection
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+
+  // Check if already authenticated (stored in sessionStorage)
+  useEffect(() => {
+    const auth = sessionStorage.getItem("dake_admin_auth");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("dake_admin_auth", "true");
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
 
   const [question, setQuestion] = useState("");
   const [resolutionDate, setResolutionDate] = useState("");
@@ -177,6 +204,53 @@ export default function AdminPage() {
     { question: "Will Ethereum complete Pectra upgrade in Q1 2026?", category: "Tech" },
     { question: "Will SpaceX launch Starship to orbit this month?", category: "Space" },
   ];
+
+  // Password protection gate
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-[80vh] flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 animate-in">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#FACC15]/10 flex items-center justify-center">
+                <Icon icon="solar:lock-keyhole-outline" width={32} className="text-[#FACC15]" />
+              </div>
+              <h1 className="text-2xl font-medium text-white mb-2">Admin Access</h1>
+              <p className="text-slate-400 text-sm">Enter the admin password to continue</p>
+            </div>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="Enter password"
+                  className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-[#FACC15]/50 focus:ring-1 focus:ring-[#FACC15]/50 ${
+                    passwordError ? "border-red-500" : "border-white/10"
+                  }`}
+                  autoFocus
+                />
+                {passwordError && (
+                  <p className="text-red-400 text-sm mt-2">Incorrect password</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-[#FACC15] text-neutral-900 rounded-xl font-medium hover:bg-[#FACC15]/90 transition-all"
+              >
+                Access Admin
+              </button>
+            </form>
+            <div className="mt-6 text-center">
+              <Link href="/markets" className="text-slate-400 text-sm hover:text-white transition-colors">
+                Back to Markets
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 lg:p-8 max-w-6xl mx-auto">

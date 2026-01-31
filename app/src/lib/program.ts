@@ -114,6 +114,7 @@ export interface PositionAccount {
   market: PublicKey;
   owner: PublicKey;
   amount: BN;
+  lockedPayout: BN; // Locked at bet time - guaranteed payout if winner
   encryptedSideHandle: BN;
   isWinnerHandle: BN;
   claimed: boolean;

@@ -63,4 +63,11 @@ pub mod dake {
     ) -> Result<()> {
         instructions::claim_winnings::handler(ctx, handle, plaintext)
     }
+
+    /// Grant decrypt access for is_winner_handle (call after check_winner)
+    pub fn grant_decrypt_access<'info>(
+        ctx: Context<'_, '_, '_, 'info, GrantDecryptAccess<'info>>,
+    ) -> Result<()> {
+        instructions::grant_decrypt_access::handler(ctx)
+    }
 }

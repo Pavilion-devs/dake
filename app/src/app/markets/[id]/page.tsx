@@ -79,29 +79,56 @@ export default function MarketDetailPage({
     checkExistingPosition();
   }, [checkExistingPosition]);
 
-  // Calculate potential payout
+  // Calculate potential payout using parimutuel formula
+  // Payout = (your_bet / winning_pool) * total_pool
   const calculatePotentialPayout = (side: "yes" | "no", amount: number) => {
     if (!market || amount <= 0) return null;
 
     const yesPool = market.totalYesAmount.toNumber() / LAMPORTS_PER_SOL;
     const noPool = market.totalNoAmount.toNumber() / LAMPORTS_PER_SOL;
+    const totalPool = yesPool + noPool;
 
-    // Add user's potential bet to the pool
+    // Add user's bet to their side's pool
     const newYesPool = side === "yes" ? yesPool + amount : yesPool;
     const newNoPool = side === "no" ? noPool + amount : noPool;
+    const newTotalPool = newYesPool + newNoPool;
 
+    // Pool user would win from
     const winningPool = side === "yes" ? newYesPool : newNoPool;
-    const losingPool = side === "yes" ? newNoPool : newYesPool;
 
     if (winningPool === 0) return null;
 
-    // Payout = your_bet + (your_bet / winning_pool) * losing_pool
-    const payout = amount + (amount / winningPool) * losingPool;
+    // Payout = (user_bet / winning_pool) * total_pool
+    const payout = (amount / winningPool) * newTotalPool;
     const profit = payout - amount;
     const multiplier = payout / amount;
 
-    return { payout, profit, multiplier };
+    // Calculate implied probability (your pool / total pool)
+    const impliedProbability = (winningPool / newTotalPool) * 100;
+
+    return { payout, profit, multiplier, impliedProbability };
   };
+
+  // Calculate current market odds
+  const calculateOdds = () => {
+    const yesPool = market?.totalYesAmount.toNumber() || 0;
+    const noPool = market?.totalNoAmount.toNumber() || 0;
+    const total = yesPool + noPool;
+
+    if (total === 0) return { yesOdds: 2.0, noOdds: 2.0, yesProbability: 50, noProbability: 50 };
+
+    // Odds = total_pool / side_pool
+    const yesOdds = total / yesPool;
+    const noOdds = total / noPool;
+
+    // Probability = side_pool / total_pool
+    const yesProbability = (yesPool / total) * 100;
+    const noProbability = (noPool / total) * 100;
+
+    return { yesOdds, noOdds, yesProbability, noProbability };
+  };
+
+  const odds = market ? calculateOdds() : null;
 
   const potentialPayout = selectedSide && betAmount
     ? calculatePotentialPayout(selectedSide, parseFloat(betAmount) || 0)
@@ -278,19 +305,35 @@ export default function MarketDetailPage({
         </div>
       </div>
 
-      {/* Pool Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6 animate-in-delay-1">
-        <div className="bg-green-500/5 border border-green-500/10 rounded-xl p-4 text-center">
-          <p className="text-green-400 text-sm mb-1">YES Pool</p>
-          <p className="text-xl font-medium text-white">{yesPool.toFixed(2)} SOL</p>
+      {/* Odds & Pool Stats */}
+      <div className="grid grid-cols-2 gap-4 mb-6 animate-in-delay-1">
+        <div className="bg-green-500/5 border border-green-500/10 rounded-xl p-4">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-green-400 text-sm font-medium">YES</span>
+            <span className="text-xs text-slate-400">{yesPool.toFixed(2)} SOL pool</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-white">{odds?.yesOdds.toFixed(2)}x</span>
+            <span className="text-sm text-slate-400">{odds?.yesProbability.toFixed(0)}% chance</span>
+          </div>
         </div>
-        <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4 text-center">
-          <p className="text-red-400 text-sm mb-1">NO Pool</p>
-          <p className="text-xl font-medium text-white">{noPool.toFixed(2)} SOL</p>
+        <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-4">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-red-400 text-sm font-medium">NO</span>
+            <span className="text-xs text-slate-400">{noPool.toFixed(2)} SOL pool</span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-white">{odds?.noOdds.toFixed(2)}x</span>
+            <span className="text-sm text-slate-400">{odds?.noProbability.toFixed(0)}% chance</span>
+          </div>
         </div>
-        <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center">
-          <p className="text-slate-400 text-sm mb-1">Total Pool</p>
-          <p className="text-xl font-medium text-[#FACC15]">{totalPool.toFixed(2)} SOL</p>
+      </div>
+
+      {/* Total Pool */}
+      <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 mb-6 animate-in-delay-1">
+        <div className="flex justify-between items-center">
+          <span className="text-slate-400">Total Pool</span>
+          <span className="text-xl font-medium text-[#FACC15]">{totalPool.toFixed(2)} SOL</span>
         </div>
       </div>
 
@@ -300,10 +343,33 @@ export default function MarketDetailPage({
           <div className="flex items-start gap-4">
             <Icon icon="solar:check-circle-bold" width={24} className="text-[#FACC15]" />
             <div className="flex-1">
-              <h3 className="text-white font-medium mb-1">You have a position in this market</h3>
-              <p className="text-slate-400 text-sm mb-3">
-                Your bet: <span className="text-white font-medium">{(userPosition.amount.toNumber() / LAMPORTS_PER_SOL).toFixed(2)} SOL</span>
-                {" · "}Your side is <span className="text-[#FACC15]">encrypted</span>
+              <h3 className="text-white font-medium mb-2">You have a position in this market</h3>
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <p className="text-slate-400 text-xs mb-1">Your Bet</p>
+                  <p className="text-lg font-bold text-white">
+                    {(userPosition.amount.toNumber() / LAMPORTS_PER_SOL).toFixed(2)} SOL
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-xs mb-1">Locked Payout (if win)</p>
+                  <p className="text-lg font-bold text-green-400">
+                    {(() => {
+                      try {
+                        const payout = userPosition.lockedPayout;
+                        if (!payout) return "—";
+                        const payoutNum = parseFloat(payout.toString()) / LAMPORTS_PER_SOL;
+                        if (payoutNum > 1000 || payoutNum < 0 || isNaN(payoutNum)) return "—";
+                        return `${payoutNum.toFixed(2)} SOL`;
+                      } catch {
+                        return "—";
+                      }
+                    })()}
+                  </p>
+                </div>
+              </div>
+              <p className="text-slate-400 text-xs mb-3">
+                Your side is <span className="text-[#FACC15]">encrypted</span> · Payout is <span className="text-green-400">locked & guaranteed</span>
               </p>
               <Link
                 href="/portfolio"
@@ -334,11 +400,12 @@ export default function MarketDetailPage({
                     : "bg-white/[0.02] border-white/10 text-slate-400 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="flex items-center justify-center gap-2 mb-1">
                   <Icon icon="solar:check-circle-outline" width={24} />
                   <span className="text-2xl font-medium">YES</span>
                 </div>
-                <p className="text-sm opacity-70">I think this will happen</p>
+                <p className="text-lg font-bold text-green-400">{odds?.yesOdds.toFixed(2)}x payout</p>
+                <p className="text-xs opacity-70 mt-1">{odds?.yesProbability.toFixed(0)}% implied probability</p>
               </button>
               <button
                 onClick={() => setSelectedSide("no")}
@@ -348,11 +415,12 @@ export default function MarketDetailPage({
                     : "bg-white/[0.02] border-white/10 text-slate-400 hover:border-white/20"
                 }`}
               >
-                <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="flex items-center justify-center gap-2 mb-1">
                   <Icon icon="solar:close-circle-outline" width={24} />
                   <span className="text-2xl font-medium">NO</span>
                 </div>
-                <p className="text-sm opacity-70">I think this won't happen</p>
+                <p className="text-lg font-bold text-red-400">{odds?.noOdds.toFixed(2)}x payout</p>
+                <p className="text-xs opacity-70 mt-1">{odds?.noProbability.toFixed(0)}% implied probability</p>
               </button>
             </div>
           </div>
@@ -391,27 +459,38 @@ export default function MarketDetailPage({
 
           {/* Potential Payout Display */}
           {potentialPayout && (
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-slate-400 text-sm">If {selectedSide?.toUpperCase()} wins:</span>
-                <span className="text-white font-medium">
-                  {potentialPayout.payout.toFixed(3)} SOL
-                </span>
+            <div className="bg-[#FACC15]/5 border border-[#FACC15]/20 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Icon icon="solar:calculator-outline" width={18} className="text-[#FACC15]" />
+                <span className="text-[#FACC15] font-medium text-sm">Your Potential Return</span>
               </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-slate-400 text-sm">Potential profit:</span>
-                <span className="text-green-400 font-medium">
-                  +{potentialPayout.profit.toFixed(3)} SOL
-                </span>
+              <div className="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <p className="text-slate-400 text-xs mb-1">If {selectedSide?.toUpperCase()} wins</p>
+                  <p className="text-2xl font-bold text-white">
+                    {potentialPayout.payout.toFixed(2)} SOL
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-xs mb-1">Net Profit</p>
+                  <p className="text-2xl font-bold text-green-400">
+                    +{potentialPayout.profit.toFixed(2)} SOL
+                  </p>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Multiplier:</span>
-                <span className="text-[#FACC15] font-medium">
-                  {potentialPayout.multiplier.toFixed(2)}x
-                </span>
+              <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                <div>
+                  <span className="text-slate-400 text-xs">Return</span>
+                  <p className="text-[#FACC15] font-bold">{potentialPayout.multiplier.toFixed(2)}x</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-slate-400 text-xs">Implied Probability</span>
+                  <p className="text-white font-medium">{potentialPayout.impliedProbability?.toFixed(0)}%</p>
+                </div>
               </div>
-              <p className="text-xs text-slate-500 mt-3">
-                * Estimates based on current pool. Final payout depends on total bets at resolution.
+              <p className="text-xs text-green-400/70 mt-3 flex items-center gap-1">
+                <Icon icon="solar:lock-outline" width={12} />
+                Your payout is LOCKED when you bet — it won't change even if others bet after you!
               </p>
             </div>
           )}

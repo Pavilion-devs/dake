@@ -236,6 +236,41 @@
       ]
     },
     {
+      "name": "grant_decrypt_access",
+      "docs": [
+        "Grant decrypt access for is_winner_handle (call after check_winner)"
+      ],
+      "discriminator": [
+        182,
+        222,
+        90,
+        37,
+        106,
+        145,
+        77,
+        174
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "position"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "inco_lightning_program",
+          "address": "5sjEbPiqgZrYwR31ahR6Uk9wf5awoX61YGg7jExQSwaj"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "place_bet",
       "docs": [
         "Place a bet on a prediction market",
@@ -609,6 +644,14 @@
             "name": "amount",
             "docs": [
               "Bet amount in lamports (public - needed for payout calculation)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "locked_payout",
+            "docs": [
+              "Locked payout amount - calculated at bet time, NEVER changes",
+              "This ensures your profit is guaranteed regardless of future bets"
             ],
             "type": "u64"
           },

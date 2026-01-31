@@ -73,6 +73,9 @@ pub struct Position {
     pub owner: Pubkey,
     /// Bet amount in lamports (public - needed for payout calculation)
     pub amount: u64,
+    /// Locked payout amount - calculated at bet time, NEVER changes
+    /// This ensures your profit is guaranteed regardless of future bets
+    pub locked_payout: u64,
     /// Encrypted side handle: 1 = YES, 0 = NO (private!)
     pub encrypted_side_handle: u128,
     /// Encrypted result of (user_side == winning_side) comparison
@@ -84,7 +87,7 @@ pub struct Position {
 }
 
 impl Position {
-    // 8 (discriminator) + 32 (market) + 32 (owner) + 8 (amount) + 16 (encrypted_side)
+    // 8 (discriminator) + 32 (market) + 32 (owner) + 8 (amount) + 8 (locked_payout) + 16 (encrypted_side)
     // + 16 (is_winner) + 1 (claimed) + 1 (bump) + padding
-    pub const SIZE: usize = 8 + 32 + 32 + 8 + 16 + 16 + 1 + 1 + 32;
+    pub const SIZE: usize = 8 + 32 + 32 + 8 + 8 + 16 + 16 + 1 + 1 + 32;
 }

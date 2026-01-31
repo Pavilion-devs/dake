@@ -72,6 +72,11 @@ pub fn handler<'info>(
         ],
     )?;
 
+    // Get current pool values BEFORE adding this bet
+    let yes_pool_before = market.total_yes_amount;
+    let no_pool_before = market.total_no_amount;
+    let total_pool_before = yes_pool_before.saturating_add(no_pool_before);
+
     // Update pool totals based on side
     if side_for_pool == 1 {
         market.total_yes_amount = market.total_yes_amount.saturating_add(amount);
@@ -79,6 +84,27 @@ pub fn handler<'info>(
         market.total_no_amount = market.total_no_amount.saturating_add(amount);
     }
     market.participant_count += 1;
+
+    // Calculate LOCKED payout at bet time (odds locked forever!)
+    // Formula: locked_payout = (amount * (total_pool + amount)) / (side_pool + amount)
+    // This uses AFTER-bet pools for the calculation
+    let side_pool_after = if side_for_pool == 1 {
+        market.total_yes_amount
+    } else {
+        market.total_no_amount
+    };
+    let total_pool_after = market.total_yes_amount.saturating_add(market.total_no_amount);
+
+    let locked_payout = if side_pool_after > 0 {
+        (amount as u128)
+            .checked_mul(total_pool_after as u128)
+            .and_then(|v| v.checked_div(side_pool_after as u128))
+            .map(|v| v as u64)
+            .unwrap_or(amount)
+    } else {
+        // Edge case: return original amount
+        amount
+    };
 
     // Create encrypted side handle using Inco Lightning
     let inco = ctx.accounts.inco_lightning_program.to_account_info();
@@ -90,11 +116,12 @@ pub fn handler<'info>(
     );
     let side_handle: Euint128 = cpi::new_euint128(cpi_ctx, encrypted_side, 0)?;
 
-    // Store position
+    // Store position with LOCKED payout
     let position = &mut ctx.accounts.position;
     position.market = market.key();
     position.owner = ctx.accounts.bettor.key();
     position.amount = amount;
+    position.locked_payout = locked_payout; // LOCKED - never changes!
     position.encrypted_side_handle = side_handle.0;
     position.is_winner_handle = 0; // Will be set during check_winner
     position.claimed = false;
@@ -114,8 +141,10 @@ pub fn handler<'info>(
         cpi::allow(cpi_ctx, side_handle.0, true, ctx.accounts.bettor.key())?;
     }
 
+    let multiplier = if amount > 0 { (locked_payout as f64 / amount as f64 * 100.0) as u64 } else { 100 };
     msg!("Bet placed on Dake Market #{}!", market.market_id);
     msg!("   Amount: {} lamports", amount);
+    msg!("   Locked payout: {} lamports ({}% return if win)", locked_payout, multiplier);
     msg!("   Side handle: {} (encrypted - nobody knows your position!)", side_handle.0);
     msg!("   Pool totals - YES: {}, NO: {}", market.total_yes_amount, market.total_no_amount);
 

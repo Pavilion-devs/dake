@@ -75,28 +75,10 @@ pub fn handler(
     let is_winner = parse_plaintext_to_bool(&plaintext)?;
     require!(is_winner, DakeError::NotWinner);
 
-    // Calculate proportional payout
-    let (winning_pool, _losing_pool) = match market.status {
-        MarketStatus::ResolvedYes => (market.total_yes_amount, market.total_no_amount),
-        MarketStatus::ResolvedNo => (market.total_no_amount, market.total_yes_amount),
-        _ => return Err(DakeError::MarketNotResolved.into()),
-    };
-
-    // Payout = (user_bet / winning_pool) * total_pool
-    // To avoid floating point: payout = (user_bet * total_pool) / winning_pool
-    let total_pool = market.total_pool();
+    // Use the LOCKED payout that was calculated at bet time
+    // This guarantees the user gets exactly what they were promised
     let user_bet = position.amount;
-
-    let payout = if winning_pool > 0 {
-        (user_bet as u128)
-            .checked_mul(total_pool as u128)
-            .and_then(|v| v.checked_div(winning_pool as u128))
-            .map(|v| v as u64)
-            .unwrap_or(0)
-    } else {
-        // Edge case: no winning bets, shouldn't happen but return original bet
-        user_bet
-    };
+    let payout = position.locked_payout;
 
     // Ensure we don't pay out more than vault has
     let vault_balance = ctx.accounts.vault.lamports();
