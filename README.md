@@ -1,8 +1,10 @@
 # Dake - Confidential Prediction Markets on Solana
 
+![Dake](image.png)
+
 The first prediction market where your bets are encrypted on-chain using Fully Homomorphic Encryption (FHE). No one can see which side you picked — not even the blockchain.
 
-**Built with Solana + Inco Network + OpenAI**
+**Built with Solana + Inco Network + OpenAI Agents SDK**
 
 ## How It Works
 
@@ -20,18 +22,20 @@ The first prediction market where your bets are encrypted on-chain using Fully H
 | Winner result | Encrypted (only you can decrypt) |
 | Payout claim | Verified via Ed25519 proof |
 
+![Claiming winnings & lost bets on Dake](image2.png)
+
 ## Features
 
 - **Encrypted betting** — Bet side hidden using `@inco/solana-sdk` encryption
 - **Parimutuel odds** — Dynamic odds based on pool ratios with locked payouts
-- **AI Market Analysis** — Built-in AI chatbot with real-time web search (OpenAI) to help analyze markets
+- **AI Market Analysis** — Built-in AI chatbot with real-time web search (OpenAI Agents SDK) to help analyze markets
 - **On-chain verification** — Winner claims verified via Inco attested decrypt + Ed25519 signatures
 
 ## Tech Stack
 
 - **Program**: Solana (Anchor Framework), Inco Lightning SDK (FHE)
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
-- **AI**: OpenAI Responses API with web search
+- **AI**: OpenAI Agents SDK with web search tool
 
 ## Quick Start
 
@@ -45,7 +49,7 @@ The first prediction market where your bets are encrypted on-chain using Fully H
 ```bash
 cd app
 cp .env.example .env.local
-# Edit .env.local with your RPC URL and OpenAI API key
+# Edit .env.local with your values (see Environment Variables below)
 npm install
 npm run dev
 ```
@@ -60,16 +64,31 @@ NEXT_PUBLIC_PROGRAM_ID=5apEYrFFuxT7yExEFz56kfmuYvc1YxcActFCMWnYpQea
 OPENAI_API_KEY=sk-...
 ```
 
+### Creating a Market
+
+Markets are created through the **Admin panel** at `/admin`. To create a market:
+
+1. Navigate to `/admin` and authenticate
+2. Connect a Solana wallet (this wallet becomes the market admin)
+3. Enter the market question (e.g. "Will BTC hit $200k by March 2026?")
+4. Set a resolution date
+5. Submit — the market is created on-chain and appears on the homepage
+
+> The admin wallet that creates a market is the only wallet that can resolve it (set the outcome to YES or NO).
+
 ### Deploy the Solana Program (optional)
 
-```bash
-# Install dependencies
-yarn install
+See **[PROGRAM_ID.md](PROGRAM_ID.md)** for current deployment info (program ID, explorer link, upgrade authority).
 
-# Build and deploy
+To deploy your own:
+
+```bash
+yarn install
 anchor build
 anchor deploy --provider.cluster devnet
 ```
+
+After deploying, update `NEXT_PUBLIC_PROGRAM_ID` in your `.env.local` with your new program ID.
 
 ## Project Structure
 
@@ -86,7 +105,7 @@ app/src/
   app/
     markets/[id]/       # Market detail page with betting UI
     portfolio/          # View positions & claim winnings
-    admin/              # Market management
+    admin/              # Market creation & resolution
     api/chat/           # AI analysis streaming endpoint
   components/
     app/AIChatPanel.tsx # Slide-in AI chat with web search
